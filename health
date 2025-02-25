@@ -1,0 +1,62 @@
+import requests
+
+API_KEY = "your_infermedica_api_key"
+APP_ID = "your_infermedica_app_id"
+API_URL = "https://api.infermedica.com/v3/"
+
+
+headers = {
+    "App-Id": APP_ID,
+    "App-Key": API_KEY,
+    "Content-Type": "application/json",
+}
+
+def get_symptoms():
+    """Fetch a list of symptoms from the API."""
+    response = requests.get(f"{API_URL}symptoms", headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print("Failed to fetch symptoms.")
+        return []
+
+def diagnose(symptoms, age, sex):
+    """Perform a diagnosis based on symptoms, age, and sex."""
+    data = {
+        "sex": sex,
+        "age": age,
+        "evidence": [{"id": symptom["id"], "choice_id": "present"} for symptom in symptoms],
+    }
+    response = requests.post(f"{API_URL}diagnosis", headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print("Failed to perform diagnosis.")
+        return None
+
+def main():
+    print("Welcome to the Symptom Checker!")
+    age = int(input("Enter your age: "))
+    sex = input("Enter your sex (male/female): ").lower()
+
+    symptoms_list = get_symptoms()
+    if not symptoms_list:
+        return
+
+    print("\nAvailable Symptoms:")
+    for i, symptom in enumerate(symptoms_list):
+        print(f"{i + 1}. {symptom['name']}")
+
+  
+    selected_indices = input("Enter the numbers of your symptoms (comma-separated): ").split(",")
+    selected_symptoms = [symptoms_list[int(i) - 1] for i in selected_indices]
+
+ 
+    diagnosis_result = diagnose(selected_symptoms, age, sex)
+    if diagnosis_result:
+        print("\nDiagnosis Results:")
+        for condition in diagnosis_result["conditions"]:
+            print(f"- {condition['name']} (Probability: {condition['probability']:.2%})")
+
+if __name__ == "__main__":
+    main()
